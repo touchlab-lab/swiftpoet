@@ -14,8 +14,8 @@ plugins {
 }
 
 
-group = "io.outfoxx"
-version = "1.5.0-SNAPSHOT"
+group = "co.touchlab.fork.swiftpoet"
+version = System.getenv("RELEASE_VERSION") ?: "1.5.0-SNAPSHOT"
 description = "A Kotlin/Java API for generating .swift source files."
 
 val isSnapshot = "$version".endsWith("SNAPSHOT")
@@ -195,6 +195,17 @@ publishing {
         password = project.findProperty("ossrhPassword")?.toString()
       }
     }
+
+      maven {
+          name = "aws"
+          val snapshotUrl = "s3://touchlab-repo/snapshot"
+          val releaseUrl = "s3://touchlab-repo/release"
+          url = uri(if (isSnapshot) snapshotUrl else releaseUrl)
+          credentials(AwsCredentials::class) {
+              accessKey = System.getenv("AWS_TOUCHLAB_DEPLOY_ACCESS")
+              secretKey = System.getenv("AWS_TOUCHLAB_DEPLOY_SECRET")
+          }
+      }
 
   }
 
