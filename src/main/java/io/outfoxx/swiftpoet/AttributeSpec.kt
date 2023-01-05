@@ -70,5 +70,7 @@ class AttributeSpec internal constructor(
 
     val DISCARDABLE_RESULT = builder("discardableResult").build()
     val ESCAPING = builder("escaping").build()
+    val CONVENTION_BLOCK = builder("convention").addArgument("block").build()
+    val CONVENTION_C = builder("convention").addArgument("c").build()
   }
 }

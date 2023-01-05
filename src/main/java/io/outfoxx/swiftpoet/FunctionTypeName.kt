@@ -19,8 +19,10 @@ package io.outfoxx.swiftpoet
 class FunctionTypeName internal constructor(
   parameters: List<ParameterSpec> = emptyList(),
   val returnType: TypeName = VOID,
+  attributes: List<AttributeSpec> = emptyList(),
 ) : TypeName() {
   val parameters = parameters.toImmutableList()
+  val attributes = attributes.toImmutableList()
 
   init {
     for (param in parameters) {
@@ -29,8 +31,15 @@ class FunctionTypeName internal constructor(
     }
   }
 
+  fun copy(
+    parameters: List<ParameterSpec> = this.parameters,
+    returnType: TypeName = this.returnType,
+    attributes: List<AttributeSpec> = this.attributes,
+  ) = FunctionTypeName(parameters, returnType, attributes)
+
   override fun emit(out: CodeWriter): CodeWriter {
 
+    out.emitAttributes(attributes, separator = " ", suffix = " ")
     parameters.emit(out, includeNames = false)
     out.emitCode(" -> %T", returnType)
 
@@ -41,24 +50,28 @@ class FunctionTypeName internal constructor(
     /** Returns a function type with `returnType` and parameters listed in `parameters`. */
     @JvmStatic fun get(
       parameters: List<ParameterSpec> = emptyList(),
-      returnType: TypeName
-    ) = FunctionTypeName(parameters, returnType)
+      returnType: TypeName,
+      attributes: List<AttributeSpec> = emptyList(),
+    ) = FunctionTypeName(parameters, returnType, attributes)
 
     /** Returns a function type with `returnType` and parameters listed in `parameters`. */
     @JvmStatic fun get(
       vararg parameters: TypeName = emptyArray(),
-      returnType: TypeName
+      returnType: TypeName,
+      attributes: List<AttributeSpec> = emptyList(),
     ): FunctionTypeName {
       return FunctionTypeName(
         parameters.toList().map { ParameterSpec.unnamed(it) },
-        returnType
+        returnType,
+        attributes,
       )
     }
 
     /** Returns a function type with `returnType` and parameters listed in `parameters`. */
     @JvmStatic fun get(
       vararg parameters: ParameterSpec = emptyArray(),
-      returnType: TypeName
-    ) = FunctionTypeName(parameters.toList(), returnType)
+      returnType: TypeName,
+      attributes: List<AttributeSpec> = emptyList(),
+    ) = FunctionTypeName(parameters.toList(), returnType, attributes)
   }
 }
