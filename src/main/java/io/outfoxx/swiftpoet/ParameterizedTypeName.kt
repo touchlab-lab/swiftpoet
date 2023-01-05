@@ -64,7 +64,13 @@ class ParameterizedTypeName internal constructor(
 
   override fun emit(out: CodeWriter): CodeWriter {
     when (rawType) {
-      OPTIONAL -> out.emitCode("%T?", typeArguments[0])
+      OPTIONAL -> typeArguments[0].let {
+        if (it is FunctionTypeName) {
+          out.emitCode("(%T)?", it)
+        } else {
+          out.emitCode("%T?", it)
+        }
+      }
       IMPLICIT -> out.emitCode("%T!", typeArguments[0])
       ARRAY -> out.emitCode("[%T]", typeArguments[0])
       DICTIONARY -> out.emitCode("[%T : %T]", typeArguments[0], typeArguments[1])
