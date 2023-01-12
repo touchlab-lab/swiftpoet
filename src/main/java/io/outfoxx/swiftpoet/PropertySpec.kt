@@ -17,8 +17,6 @@
 package io.outfoxx.swiftpoet
 
 import io.outfoxx.swiftpoet.CodeBlock.Companion.ABSTRACT
-import io.outfoxx.swiftpoet.FunctionSpec.Companion.GETTER
-import io.outfoxx.swiftpoet.FunctionSpec.Companion.SETTER
 
 /** A generated property declaration.  */
 class PropertySpec private constructor(
@@ -135,13 +133,13 @@ class PropertySpec private constructor(
     }
 
     fun getter(getter: FunctionSpec) = apply {
-      require(getter.name == GETTER) { "${getter.name} is not a getter" }
+      require(getter.type == FunctionSpec.Type.Getter) { "${getter.name} is not a getter" }
       check(this.getter == null) { "getter was already set" }
       this.getter = getter
     }
 
     fun setter(setter: FunctionSpec) = apply {
-      require(setter.name == SETTER) { "${setter.name} is not a setter" }
+      require(setter.type == FunctionSpec.Type.Setter) { "${setter.name} is not a setter" }
       check(this.setter == null) { "setter was already set" }
       this.setter = setter
     }

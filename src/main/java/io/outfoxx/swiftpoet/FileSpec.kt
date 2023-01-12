@@ -141,7 +141,7 @@ class FileSpec private constructor(
     }
 
     fun addFunction(functionSpec: FunctionSpec) = apply {
-      require(!functionSpec.isConstructor && !functionSpec.isAccessor) {
+      require(!functionSpec.isConstructor && !functionSpec.type.isAccessor) {
         "cannot add ${functionSpec.name} to file $name"
       }
       addMember(FileMemberSpec.builder(functionSpec).build())

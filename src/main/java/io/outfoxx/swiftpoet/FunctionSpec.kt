@@ -32,9 +32,10 @@ class FunctionSpec private constructor(
   val failable = builder.failable
   val localTypeSpecs = builder.localTypeSpecs
   val body = if (builder.abstract) CodeBlock.ABSTRACT else builder.body.build()
+  val type = builder.type
 
   init {
-    require(name != SETTER || parameters.size <= 1) {
+    require(type != Type.Setter || parameters.size <= 1) {
       "$name must have zero or one parameter"
     }
   }
@@ -45,7 +46,7 @@ class FunctionSpec private constructor(
     implicitModifiers: Set<Modifier>,
     conciseGetter: Boolean = false
   ) {
-    if (name == GETTER && conciseGetter && doc.isEmpty() && attributes.isEmpty() && modifiers.isEmpty()) {
+    if (type == Type.Getter && conciseGetter && doc.isEmpty() && attributes.isEmpty() && modifiers.isEmpty()) {
       emitLocalTypes(codeWriter)
       codeWriter.emitCode(body)
       return
@@ -55,7 +56,7 @@ class FunctionSpec private constructor(
     codeWriter.emitAttributes(attributes)
     codeWriter.emitModifiers(modifiers, implicitModifiers)
 
-    if (!isConstructor && !isDeinitializer && !name.isAccessor) {
+    if (!isConstructor && !isDeinitializer && !type.isAccessor) {
       codeWriter.emit("func ")
     }
 
@@ -94,11 +95,11 @@ class FunctionSpec private constructor(
     } else if (isDeinitializer) {
       codeWriter.emitCode(DEINITIALIZER, enclosingName)
       return
-    } else if (name == GETTER) {
-      codeWriter.emitCode(GETTER)
+    } else if (type == Type.Getter) {
+      codeWriter.emitCode(name)
       return
-    } else if (name == SETTER) {
-      codeWriter.emitCode(SETTER)
+    } else if (type == Type.Setter) {
+      codeWriter.emitCode(name)
       if (parameters.isEmpty()) {
         return
       }
@@ -116,7 +117,7 @@ class FunctionSpec private constructor(
     }
 
     parameters.emit(codeWriter) { param ->
-      param.emit(codeWriter, includeType = name != SETTER)
+      param.emit(codeWriter, includeType = type != Type.Setter)
     }
 
     val modifiers = mutableListOf<String>()
@@ -140,8 +141,6 @@ class FunctionSpec private constructor(
   val isConstructor get() = name.isConstructor
 
   val isDeinitializer get() = name.isDeinitializer
-
-  val isAccessor get() = name.isAccessor
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -168,8 +167,13 @@ class FunctionSpec private constructor(
     return builder
   }
 
+  enum class Type(val isAccessor: Boolean) {
+    Function(false), Getter(true), Setter(true)
+  }
+
   class Builder internal constructor(
-    internal val name: String
+    internal val name: String,
+    internal val type: Type = Type.Function,
   ) : AttributedSpec.Builder<Builder>() {
     internal val doc = CodeBlock.builder()
     internal val modifiers = mutableListOf<Modifier>()
@@ -200,17 +204,17 @@ class FunctionSpec private constructor(
     }
 
     fun addTypeVariables(typeVariables: Iterable<TypeVariableName>) = apply {
-      check(!name.isAccessor) { "$name cannot have type variables" }
+      check(!type.isAccessor) { "$name cannot have type variables" }
       this.typeVariables += typeVariables
     }
 
     fun addTypeVariable(typeVariable: TypeVariableName) = apply {
-      check(!name.isAccessor) { "$name cannot have type variables" }
+      check(!type.isAccessor) { "$name cannot have type variables" }
       typeVariables += typeVariable
     }
 
     fun returns(returnType: TypeName) = apply {
-      check(!name.isConstructor && !name.isAccessor) { "$name cannot have a return type" }
+      check(!name.isConstructor && !type.isAccessor) { "$name cannot have a return type" }
       this.returnType = returnType
     }
 
@@ -221,8 +225,8 @@ class FunctionSpec private constructor(
     }
 
     fun addParameter(parameterSpec: ParameterSpec) = apply {
-      check(name != GETTER) { "$name cannot have parameters" }
-      check(name != SETTER || parameters.size == 0) { "$name can have only one parameter" }
+      check(type != Type.Getter) { "$name cannot have parameters" }
+      check(type != Type.Setter || parameters.size == 0) { "$name can have only one parameter" }
       parameters += parameterSpec
     }
 
@@ -310,12 +314,9 @@ class FunctionSpec private constructor(
     private const val CONSTRUCTOR = "init"
     private const val DEINITIALIZER = "deinit"
     private const val OPERATOR = "op:"
-    internal const val GETTER = "get"
-    internal const val SETTER = "set"
 
     internal val String.isConstructor get() = this == CONSTRUCTOR
     internal val String.isDeinitializer get() = this == DEINITIALIZER
-    internal val String.isAccessor get() = this.isOneOf(GETTER, SETTER)
     internal val String.isOperator get() = this.startsWith(OPERATOR)
 
     @JvmStatic fun builder(name: String) = Builder(name)
@@ -326,9 +327,9 @@ class FunctionSpec private constructor(
 
     @JvmStatic fun deinitializerBuilder() = Builder(DEINITIALIZER)
 
-    @JvmStatic fun getterBuilder() = Builder(GETTER)
+    @JvmStatic fun getterBuilder() = Builder("get", Type.Getter)
 
-    @JvmStatic fun setterBuilder() = Builder(SETTER)
+    @JvmStatic fun setterBuilder() = Builder("set", Type.Setter)
 
     @JvmStatic fun operatorBuilder(name: String) = Builder(OPERATOR + name)
   }
